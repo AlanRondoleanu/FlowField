@@ -14,7 +14,7 @@ public:
 
 	void update();
 	void draw(sf::RenderWindow& t_window);;
-	void setDirection(sf::Vector2f t_direction);
+	void setCurrentCell(sf::Vector2f t_direction, Grid* t_cell);
 
 	sf::RectangleShape body;
 
@@ -31,5 +31,6 @@ private:
 	void initialize();
 
 	sf::Vector2f pos{ 50, 50 };
+	Grid* currentCell;
 };
 #endif

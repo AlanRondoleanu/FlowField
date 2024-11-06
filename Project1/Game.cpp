@@ -110,20 +110,13 @@ void Game::processKeys(sf::Event t_event)
 			gridVector[i].calculateGoal(goal);
 		}
 
-		generateFlowField(*goal, gridVector);
+		generateFlowFieldBFS(goal);
 	}
 
 	// Tweaking
 	if (sf::Keyboard::T == t_event.key.code)
 	{
-		for (size_t i = 0; i < gridVector.size(); i++)
-		{
-			if (gridVector[i].shape.getGlobalBounds().contains(getMousePosition()))
-			{
-				gridVector[i].findNeighbours(gridVector);
-				return;
-			}
-		}
+		drawFont = !drawFont;
 	}
 }
 
@@ -152,18 +145,18 @@ void Game::update(sf::Time t_deltaTime)
 	int gridY = static_cast<int>(player.getPos().y / Grid::gridHeight);
 	int gridNumber = gridY * 10 + gridX;
 	sf::Vector2f direction = gridVector[gridNumber].getDirection();
+	int cellID = 0;
 
 	for (size_t i = 0; i < gridVector.size(); i++)
 	{
 		if (player.body.getGlobalBounds().intersects(gridVector[i].shape.getGlobalBounds()))
 		{
 			direction = gridVector[i].direction;
+			cellID = gridVector[i].getID();
 		}
 	}
 
-	
-
-	player.setDirection(direction);
+	player.setCurrentCell(direction, &gridVector[cellID]);
 	player.update();
 }
 
@@ -181,14 +174,10 @@ void Game::render()
 	}
 	for (int i = 0; i < gridVector.size(); i++)
 	{
- 		gridVector[i].render(m_window);
+ 		gridVector[i].render(m_window, drawFont);
 	}
 
 	m_window.draw(player.body);
-
-	//Draws the selected building on mouse location
-	//playerBuildings[Buildings::PLAYER_BUILDING_AMOUNT]->draw(m_window);
-
 	m_window.display();
 }
 
@@ -220,6 +209,7 @@ void Game::initialize()
 			square.setPosition(x, y);
 
 			Grid newGrid;
+			newGrid.setFont(font);
 			newGrid.setShape(square, width, height, cellNumber);
 			gridVector.push_back(newGrid);
 
@@ -229,6 +219,14 @@ void Game::initialize()
 		x = 0;
 		y += height;
 	}
+
+	// Get neighbors of the cells
+	for (Grid n : gridVector)
+	{
+		n.findNeighbours(gridVector);
+	}
+
+	loadFont();
 }
 
 
@@ -286,6 +284,7 @@ void Game::setWall(Grid& t_grid)
 	}
 }
 
+
 void Game::generateFlowField(Grid& t_goal, std::vector<Grid>& t_flowField)
 {
 	sf::Vector2f goalPos = t_goal.shape.getPosition();
@@ -310,20 +309,59 @@ void Game::generateFlowField(Grid& t_goal, std::vector<Grid>& t_flowField)
 	}
 }
 
-void Game::generateFlowFieldBFS(Grid& t_goal, std::vector<Grid>& t_flowField)
+void Game::generateFlowFieldBFS(Grid* t_goal)
 {
-	// Get neighbors of the cells
-	for (Grid n : gridVector)
+	std::queue<Grid*> bfsQueue;
+	std::map<Grid*, bool> visited;
+
+	bfsQueue.push(t_goal);
+	visited[t_goal] = true;
+	t_goal->setCost(0);
+
+	while (!bfsQueue.empty())
 	{
-		n.findNeighbours(gridVector);
+		Grid* current = bfsQueue.front();
+		bfsQueue.pop();
+
+		// Get the neighbors of the current cell
+		current->findNeighbours(gridVector);
+
+		for (Grid* neighbor : current->neighbouringCells)
+		{
+			// Impassable terrain
+			if (neighbor->passable == false)
+				neighbor->setCost(99999);
+
+			// Passable terrain
+			if (!visited[neighbor] && neighbor->passable == true)
+			{
+				visited[neighbor] = true;
+				neighbor->setCost(current->cost + 1);
+
+				// Set the direction for the flow field
+				sf::Vector2f direction = current->shape.getPosition() - neighbor->shape.getPosition();
+				float magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
+				if (magnitude != 0)
+				{
+					direction /= magnitude;  // Normalize the direction vector
+				}
+				neighbor->setDirection(direction);  // Assuming you have a flowDirection member
+
+				bfsQueue.push(neighbor);
+			}
+		}
 	}
-
-	sf::Vector2f goalPos = t_goal.shape.getPosition();
-
-	for (Grid& grid : t_flowField)
+	for (Grid& cell : gridVector)
 	{
-		sf::Vector2f gridPos = grid.shape.getPosition();
+		cell.changeColor();
+	}
+}
 
-		
+void Game::loadFont()
+{
+	//Font Loading
+	if (!font.loadFromFile("ariblk.ttf"))
+	{
+		std::cout << "problem loading arial black font" << std::endl;
 	}
 }

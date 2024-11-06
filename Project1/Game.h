@@ -6,6 +6,7 @@
 #define GAME_HPP
 
 #include <iostream>
+#include <queue>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include "Units.h"
@@ -30,13 +31,18 @@ private:
 	void setGoal(Grid &t_grid);
 	void setWall(Grid &t_grid);
 	void generateFlowField(Grid& t_goal, std::vector<Grid>& t_flowField);
-	void generateFlowFieldBFS(Grid& t_goal, std::vector<Grid>& t_flowField);
+	void generateFlowFieldBFS(Grid* t_goal);
+	void loadFont();
 
 	sf::Vector2f getMousePosition();
 	sf::Vector2f mousePosition;
 
 	//Solider
 	Units player;
+
+	// Fonts
+	sf::Font font;
+	bool drawFont{ false };
 
 	// Grid
 	std::vector<Grid> gridVector;
