@@ -86,7 +86,7 @@ void Game::processKeys(sf::Event t_event)
 			}
 		}
 	}
-	if (sf::Keyboard::E == t_event.key.code)
+	if (sf::Keyboard::Q == t_event.key.code)
 	{
 		for (size_t i = 0; i < gridVector.size(); i++)
 		{
@@ -96,8 +96,10 @@ void Game::processKeys(sf::Event t_event)
 				return;
 			}
 		}
+
+		
 	}
-	if (sf::Keyboard::Q == t_event.key.code)
+	if (sf::Keyboard::E == t_event.key.code)
 	{
 		player.setPos(getMousePosition());
 	}
